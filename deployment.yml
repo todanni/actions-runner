@@ -1,0 +1,44 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: cache-local-path
+provisioner: rancher.io/local-path
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+
+---
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerSet
+metadata:
+  name: todanni
+spec:
+  replicas: 1
+  repository: stegzilla/auth
+  image: stegzilla/todanni-actions-runner
+  selector:
+    matchLabels:
+      app: todanni
+  serviceName: todanni
+  template:
+    metadata:
+      labels:
+        app: todanni
+    spec:
+      containers:
+        - name: runner
+          env:
+            - name: GOMODCACHE
+              value: "/home/runner/.cache/go-mod"
+          volumeMounts:
+            - name: cache
+              mountPath: "/home/runner/.cache"
+  volumeClaimTemplates:
+    - metadata:
+        name: cache
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Mi
+        storageClassName: cache-local-path
