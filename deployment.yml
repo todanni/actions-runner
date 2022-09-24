@@ -32,7 +32,7 @@ metadata:
 spec:
   replicas: 2
   organization: todanni
-  image: stegzilla/todanni-actions-runner
+  image: todanni/actions-runner
   selector:
     matchLabels:
       app: todanni-github-runner
