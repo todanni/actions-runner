@@ -1,7 +1,25 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: cache-local-path
+  name: go-cache-local-path
+provisioner: rancher.io/local-path
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: npm-cache-local-path
+provisioner: rancher.io/local-path
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: docker-cache-local-path
 provisioner: rancher.io/local-path
 reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
@@ -10,19 +28,19 @@ volumeBindingMode: WaitForFirstConsumer
 apiVersion: actions.summerwind.dev/v1alpha1
 kind: RunnerSet
 metadata:
-  name: todanni
+  name: todanni-github-runner
 spec:
-  replicas: 1
-  repository: stegzilla/auth
+  replicas: 2
+  organization: todanni
   image: stegzilla/todanni-actions-runner
   selector:
     matchLabels:
-      app: todanni
-  serviceName: todanni
+      app: todanni-github-runner
+  serviceName: todanni-github-runner
   template:
     metadata:
       labels:
-        app: todanni
+        app: todanni-github-runner
     spec:
       containers:
         - name: runner
@@ -30,15 +48,39 @@ spec:
             - name: GOMODCACHE
               value: "/home/runner/.cache/go-mod"
           volumeMounts:
-            - name: cache
+            - name: go-cache
               mountPath: "/home/runner/.cache"
+            - name: npm-cache
+              mountPath: "/home/runner/.npm"
+        - name: docker
+          volumeMounts:
+            - name: docker-cache
+              mountPath: /var/lib/docker
   volumeClaimTemplates:
     - metadata:
-        name: cache
+        name: go-cache
       spec:
         accessModes:
           - ReadWriteOnce
         resources:
           requests:
             storage: 10Mi
-        storageClassName: cache-local-path
+        storageClassName: go-cache-local-path
+    - metadata:
+        name: npm-cache
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Mi
+        storageClassName: npm-cache-local-path
+    - metadata:
+        name: docker-cache
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Mi
+        storageClassName: docker-cache-local-path
